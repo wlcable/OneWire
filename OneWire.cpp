@@ -154,17 +154,18 @@ OneWire::OneWire(uint8_t pin, bool ds2482)
 	if (ds2482) { 
 		// Address is determined by two pins on the DS2482 AD1/AD0
 		// Pass 0b00, 0b01, 0b10 or 0b11
-		Wire.begin(); // init wire lib
-  		deviceReset();
-  		writeConfig(DS2482_CONFIG_SPU|DS2482_CONFIG_APU); // enable active pullup
+		mAddress = 0x18 | pin;
+		mError = 0;
+		//Wire.begin(); // init wire lib, this should be done outside of this class
+		//deviceReset();
+		//writeConfig(DS2482_CONFIG_SPU|DS2482_CONFIG_APU); // enable active pullup
 	}
 	else { // input is the Digital pin address
 		pinMode(pin, INPUT);
 		bitmask = PIN_TO_BITMASK(pin);
 		baseReg = PIN_TO_BASEREG(pin);
 	}
-	mAddress = pin;
-	mError = 0;
+	
 	ds2482present = ds2482;
 #if ONEWIRE_SEARCH
 	reset_search();
