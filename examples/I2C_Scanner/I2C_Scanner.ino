@@ -1,6 +1,7 @@
+#include <Arduino.h>
 #include <Wire.h>
 
-#define YUN
+//#define YUN
 
 #ifdef YUN
   #include <Bridge.h>

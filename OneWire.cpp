@@ -1,5 +1,4 @@
-/*
-Copyright (c) 2007, Jim Studt  (original old version - many contributors since)
+/* Copyright (c) 2007, Jim Studt  (original old version - many contributors since)
 
 The latest version of this library may be found at:
   http://www.pjrc.com/teensy/td_libs_OneWire.html
@@ -158,7 +157,7 @@ OneWire::OneWire(uint8_t pin, bool ds2482)
 		mError = 0;
 		//Wire.begin(); // init wire lib, this should be done outside of this class
 		//deviceReset();
-		//writeConfig(DS2482_CONFIG_SPU|DS2482_CONFIG_APU); // enable active pullup
+		//writeConfig(DS2482_CONFIG_APU); // enable active pullup
 	}
 	else { // input is the Digital pin address
 		pinMode(pin, INPUT);
@@ -323,8 +322,10 @@ void OneWire::writeConfig(uint8_t config)
 	end();
 	
 	// This should return the config bits without the complement
-	if (readByte() != config)
+	if (readByte() != config) {
 		mError = DS2482_ERROR_CONFIG;
+	}
+		
 }
 
 // Generates a 1-Wire reset/presence-detect cycle (Figure 4) at the 1-Wire line. The state
@@ -335,8 +336,8 @@ uint8_t OneWire::wireReset()
 	waitOnBusy();
 	
 	// Datasheet warns that reset with SPU set can exceed max ratings
-	clearStrongPullup();
-
+	writeConfig(readConfig() & ~DS2482_CONFIG_1WS & ~DS2482_CONFIG_SPU); //reset OverDrive Flag and clear strong pullup
+	//clearStrongPullup();
 	waitOnBusy();
 
 	begin();
@@ -507,12 +508,18 @@ void OneWire::read_bytes(uint8_t *buf, uint16_t count) {
 
 //
 // Do a ROM select
-//
-void OneWire::select(const uint8_t rom[8])
+// 
+void OneWire::select(const uint8_t rom[8], bool FAST)
 {
-	uint8_t i;
-	write(WIRE_COMMAND_SELECT);           // Choose ROM
-	for (i = 0; i < 8; i++) write(rom[i]);
+	if (!FAST) {
+		write(WIRE_COMMAND_SELECT);           // Choose ROM
+		for (uint8_t i = 0; i < 8; i++) write(rom[i]);
+	} else { 	//Overdrive Mode!         
+		write(WIRE_COMMAND_SELECT_OD);		// Choose ROM and put it in Overdrive Mode		
+		writeConfig(readConfig() | DS2482_CONFIG_1WS);	//Put DS2482 in Overdrive Mode.		
+		for (uint8_t i = 0; i < 8; i++) write(rom[i]); //Send the ROM
+	}
+
 }
 
 //
@@ -647,10 +654,11 @@ bool OneWire::search(uint8_t *newAddr, bool search_mode /* = true */)
 
             	// set or clear the bit in the ROM byte rom_byte_number
             	// with mask rom_byte_mask
-            	if (search_direction == 1)
-            		ROM_NO[rom_byte_number] |= rom_byte_mask;
-            	else
-            		ROM_NO[rom_byte_number] &= ~rom_byte_mask;
+            	if (search_direction == 1) {
+					ROM_NO[rom_byte_number] |= rom_byte_mask;
+				} else {
+					ROM_NO[rom_byte_number] &= ~rom_byte_mask;
+				}
 
            		// serial number search direction write bit
            		write_bit(search_direction);

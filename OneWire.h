@@ -80,7 +80,9 @@
 #define DS2482_COMMAND_TRIPLET		0x78
 
 #define WIRE_COMMAND_SKIP			0xCC
+#define WIRE_COMMAND_SKIP_OD        0x3C    //same as normal select but puts all capable slaves into OverDrive Mode
 #define WIRE_COMMAND_SELECT			0x55
+#define WIRE_COMMAND_SELECT_OD      0x69    //same as normal select but puts the slave in Overdrive Mode
 #define WIRE_COMMAND_SEARCH			0xF0
 #define WIRE_COMMAND_COND_SEARCH	0xEC
 
@@ -123,11 +125,10 @@ public:
 	uint8_t reset(void);
 
     // Issue a 1-Wire rom select command, you do the reset first.
-    void select(const uint8_t rom[8]);
+    void select(const uint8_t rom[8], bool FAST = false);   //optional FAST flag enables Overdrive mode
 
     // Issue a 1-Wire rom skip command, to address all on bus.
 	void skip(void);
-	
 	// Write a byte. If 'power' is one then the wire is held high at
     // the end for parasitically powered devices. You are responsible
     // for eventually depowering it by calling depower() or doing
